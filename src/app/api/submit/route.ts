@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, appendFile } from "fs/promises";
-import { join } from "path";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const entry = {
-      ...data,
-      timestamp: new Date().toISOString(),
-    };
 
-    const logPath = join(process.cwd(), "submissions.jsonl");
-    await appendFile(logPath, JSON.stringify(entry) + "\n");
+    // Create lead in Supabase
+    const { error } = await supabaseAdmin.from('leads').insert({
+      business_name: data.businessName || 'Unknown',
+      industry: data.industry || null,
+      contact_name: data.contactName || null,
+      email: data.email || null,
+      phone: data.phone || null,
+      current_tools: data.currentTools || null,
+      time_waster: data.timeWaster || null,
+      status: 'New',
+      priority: 'Medium',
+    });
 
-    console.log("New submission:", entry);
+    if (error) console.error('Supabase insert error:', error);
 
     return NextResponse.json({ success: true });
   } catch (err) {
