@@ -37,8 +37,8 @@ export async function getSession() {
 }
 
 export async function ensureAdminExists() {
-  const email = process.env.ADMIN_EMAIL || 'admin@openclaw.ai';
-  const password = process.env.ADMIN_PASSWORD || 'OpenClaw2026!';
+  const email = (process.env.ADMIN_EMAIL || 'admin@openclaw.ai').trim();
+  const password = (process.env.ADMIN_PASSWORD || 'OpenClaw2026!').trim();
   
   const { data } = await supabaseAdmin.from('admin_users').select('id').eq('email', email).single();
   if (!data) {
