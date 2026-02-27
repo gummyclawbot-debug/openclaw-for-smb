@@ -32,6 +32,8 @@ export default function LeadsPage() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showAdd, setShowAdd] = useState(false);
+  const [generatingDemo, setGeneratingDemo] = useState<string | null>(null);
+  const [demoResults, setDemoResults] = useState<Record<string, { html_url: string; screenshot_url: string | null }>>({});
 
   const fetchLeads = useCallback(async () => {
     const params = new URLSearchParams();
@@ -45,6 +47,22 @@ export default function LeadsPage() {
   }, [search, statusFilter, priorityFilter]);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
+
+  async function handleGenerateDemo(leadId: string) {
+    setGeneratingDemo(leadId);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/demo`, { method: "POST" });
+      const data = await res.json();
+      if (data.status === "success") {
+        setDemoResults((prev) => ({ ...prev, [leadId]: { html_url: data.html_url, screenshot_url: data.screenshot_url } }));
+      } else {
+        alert(`Demo generation failed: ${data.error || "Unknown error"}`);
+      }
+    } catch {
+      alert("Demo generation failed");
+    }
+    setGeneratingDemo(null);
+  }
 
   async function handleBulk(action: string) {
     if (selected.size === 0) return;
@@ -140,6 +158,7 @@ export default function LeadsPage() {
                 <th className="p-3 text-left text-purple-400 font-medium">Status</th>
                 <th className="p-3 text-left text-purple-400 font-medium">Priority</th>
                 <th className="p-3 text-left text-purple-400 font-medium">Created</th>
+                <th className="p-3 text-left text-purple-400 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -172,6 +191,45 @@ export default function LeadsPage() {
                   </td>
                   <td className={`p-3 text-sm ${PRIORITY_COLORS[lead.priority] || ""}`}>{lead.priority}</td>
                   <td className="p-3 text-purple-400 text-xs">{format(new Date(lead.created_at), "MMM d, yyyy")}</td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      {demoResults[lead.id] ? (
+                        <>
+                          <a
+                            href={demoResults[lead.id].html_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1 rounded text-xs bg-green-600/20 text-green-300 hover:bg-green-600/30 transition-colors"
+                          >
+                            🌐 View Demo
+                          </a>
+                          {demoResults[lead.id].screenshot_url && (
+                            <a
+                              href={demoResults[lead.id].screenshot_url!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 rounded text-xs bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 transition-colors"
+                            >
+                              📸
+                            </a>
+                          )}
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleGenerateDemo(lead.id)}
+                          disabled={generatingDemo === lead.id}
+                          className="px-2 py-1 rounded text-xs bg-purple-600/20 text-purple-300 hover:bg-purple-600/30 transition-colors disabled:opacity-50"
+                        >
+                          {generatingDemo === lead.id ? (
+                            <span className="flex items-center gap-1">
+                              <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                              Generating...
+                            </span>
+                          ) : "🎨 Generate Demo"}
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
