@@ -4,6 +4,7 @@ import { Pricing } from "@/components/Pricing";
 import { Testimonials } from "@/components/Testimonials";
 import { BookingForm } from "@/components/BookingForm";
 import { FAQ } from "@/components/FAQ";
+import { SystemRequirements } from "@/components/SystemRequirements";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
       <Testimonials />
       <BookingForm />
       <FAQ />
+      <SystemRequirements />
       <Footer />
     </main>
   );
